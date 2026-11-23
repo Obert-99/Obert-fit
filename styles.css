@@ -354,7 +354,39 @@ details.card[open] summary::after{content:"–"}
   .js .rv .st,.js .tip.rv .vis{opacity:1;transform:none}
   .js .rv .barsvg rect{transform:none}.js .rv .spark polyline{stroke-dashoffset:0}
   .js .rv .chal .bar i{width:var(--w)}
+  /* sanftes Einblenden bleibt auch bei „Bewegung reduzieren“ (nur Opacity, keine Bewegung) */
+  .js .rv,.js .rv .st,.js .tip.rv .vis{opacity:0;transition:opacity .7s ease!important}
+  .js .rv.in,.js .rv.in .st,.js .tip.rv.in .vis{opacity:1}
 }
 [data-count]{font-size:inherit!important;color:inherit!important;font-weight:inherit!important;letter-spacing:inherit;font-variant-numeric:tabular-nums}
 .cal{max-width:460px;margin:0 auto}
 @media (min-width:761px){.cal i{aspect-ratio:1.25}}
+
+/* Update 3c: weiche Übergänge und Rückmeldungen */
+.view.leave{opacity:0;transform:translateY(-6px);transition:opacity .15s ease,transform .15s ease}
+.view.soft{animation:softin .3s ease}
+@keyframes softin{from{opacity:.35}to{opacity:1}}
+.tile:active,.choice:active,.card[data-act]:active{transform:scale(.985)}
+.pop{position:fixed;left:50%;top:42%;width:92px;height:92px;margin:-46px 0 0 -46px;z-index:90;pointer-events:none;animation:popin 1.4s var(--ease) forwards}
+.pop svg{width:100%;height:100%;fill:var(--accent);filter:drop-shadow(0 10px 28px rgba(232,72,31,.35))}
+.pop circle{fill:var(--accent)}.pop.gold circle{fill:#e9a500}
+.pop path{fill:none;stroke:#fff;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:44;stroke-dashoffset:44;animation:tick .5s .25s ease forwards}
+@keyframes popin{0%{opacity:0;transform:scale(.6)}18%{opacity:1;transform:scale(1.08)}30%{transform:scale(1)}75%{opacity:1}100%{opacity:0;transform:scale(1)}}
+@keyframes tick{to{stroke-dashoffset:0}}
+.ring.full .ring-fg{animation:ringglow 2.2s ease-in-out 1.9s 2}
+@keyframes ringglow{50%{filter:drop-shadow(0 0 10px rgba(245,154,58,.9))}}
+.bdg.fresh .bi{animation:badgein 1s var(--ease) .4s both}
+.bdg.fresh{position:relative;overflow:hidden}
+.bdg.fresh::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.55) 50%,transparent 65%);transform:translateX(-120%);animation:sheen 1.4s ease 1s 1}
+@keyframes badgein{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.15);opacity:1}100%{transform:scale(1)}}
+@keyframes sheen{to{transform:translateX(120%)}}
+.rt-pill{position:relative;overflow:hidden}
+.rt-pill.run::after{content:'';position:absolute;left:0;bottom:0;height:4px;width:calc(var(--p)*1%);background:rgba(255,255,255,.7);transition:width 1s linear}
+.rt-pill.last{animation:rtpulse .9s ease-in-out}
+@keyframes rtpulse{50%{transform:scale(1.08)}}
+@media (prefers-reduced-motion:reduce){
+  .pop{animation:popfade 1.3s ease forwards!important}.pop path{animation:none!important;stroke-dashoffset:0}
+  @keyframes popfade{0%,100%{opacity:0}20%,70%{opacity:1}}
+  .bdg.fresh .bi,.bdg.fresh::after,.ring.full .ring-fg,.rt-pill.last{animation:none!important}
+  .view.soft{animation:none}
+}

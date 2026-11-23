@@ -150,8 +150,9 @@ function renderShell(){
 async function renderView(keep){
   const v=$('#view'); if(!v) return;
   const y=window.scrollY; destroyCharts();
+  if(!keep){const old=v.firstElementChild;if(old&&old.classList.contains('view')&&!reduced()){old.classList.add('leave');await new Promise(r=>setTimeout(r,150));}}
   if(!keep) v.innerHTML='<div class="skel"></div><div class="skel s2"></div><div class="skel s3"></div>';
-  const box=document.createElement('div'); box.className='view';
+  const box=document.createElement('div'); box.className='view'+(keep?' soft':'');
   try{ await views[state.tab](box); }
   catch(err){ box.innerHTML=`<div class="card"><b>Fehler:</b> ${esc(err.message||err)}</div>`; }
   if(!$('#view')) return;
@@ -235,12 +236,17 @@ function badges(logs){
     B('own','rocket','Eigener Weg','Eigener Plan oder Übung',own)
   ];
 }
-const badgesHtml=list=>`<div class="badges">${list.map(b=>`<div class="bdg st ${b.ok?'':'lock'}" style="--i:${list.indexOf(b)}"><div class="bi">${ic(b.icon)}</div>${esc(b.title)}<small>${esc(b.sub)}</small></div>`).join('')}</div>`;
+function freshBadges(list){
+  const key='obert-bdg-'+(state.user?state.user.id:'x'),ok=list.filter(b=>b.ok).map(b=>b.id);let seen=null;
+  try{seen=JSON.parse(localStorage.getItem(key)||'null');localStorage.setItem(key,JSON.stringify(ok));}catch(e){}
+  return new Set(seen?ok.filter(i=>!seen.includes(i)):[]);   // beim allerersten Besuch nichts als „neu“ markieren
+}
+const badgesHtml=list=>{const fresh=freshBadges(list);return `<div class="badges">${list.map(b=>`<div class="bdg st ${b.ok?'':'lock'}${fresh.has(b.id)?' fresh':''}" style="--i:${list.indexOf(b)}"><div class="bi">${ic(b.icon)}</div>${esc(b.title)}<small>${esc(b.sub)}</small></div>`).join('')}</div>`;};
 
 /* ---------- Start ---------- */
 function ringSvg(val,max){
   const size=190,r=size/2-12,c=2*Math.PI*r,p=Math.min(1,max?val/max:0),mid=size/2;
-  return `<svg class="ring" viewBox="0 0 ${size} ${size}" role="img" aria-label="${val} von ${max} Trainingstagen diese Woche">
+  return `<svg class="ring${p>=1?' full':''}" viewBox="0 0 ${size} ${size}" role="img" aria-label="${val} von ${max} Trainingstagen diese Woche">
     <defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--accent)"/><stop offset="1" style="stop-color:var(--accent2)"/></linearGradient></defs>
     <circle class="ring-bg" cx="${mid}" cy="${mid}" r="${r}"/>
     <circle class="ring-fg" cx="${mid}" cy="${mid}" r="${r}" stroke-dasharray="${c}" stroke-dashoffset="${c}" data-to="${c*(1-p)}" transform="rotate(-90 ${mid} ${mid})"/></svg>`;
@@ -514,7 +520,7 @@ function updateLast(f){
 }
 function logForm(){
   const {groups,lib,own}=exerciseOptions(), cw=currentWeek();
-  const maxW=Math.max(4,cw+2,...(state.logs||[]).map(l=>(l.week||0)+1));
+  const maxW=Math.max(52,cw+12,...(state.logs||[]).map(l=>(l.week||0)+1));
   const pre=state.prefill, all=[...groups.flatMap(g=>g.v),...lib,...own], custom=!!pre&&!all.includes(pre);
   const o=(n)=>`<option value="${esc(n)}" ${n===pre?'selected':''}>${esc(n)}</option>`;
   const field=f=>{
@@ -801,8 +807,10 @@ Object.assign(forms,{
       o[x.key]=v;
     });
     if(!o.exercise){toast('Bitte eine Übung wählen oder eine eigene eintragen.',true);return;}
+    const prevMax=Math.max(0,...(state.logs||[]).filter(l=>l.exercise===o.exercise&&l.weight!=null).map(l=>Number(l.weight)));
+    const isPr=o.weight!=null&&prevMax>0&&Number(o.weight)>prevMax;
     const {error}=await sb.from('workout_logs').insert(o);if(error)throw error;
-    state.logs=null;state.prefill='';toast('Gespeichert 💪');renderView(true);
+    state.logs=null;state.prefill='';checkPop(isPr);toast(isPr?'Neuer Bestwert bei '+o.exercise+' 🏆':'Gespeichert 💪');renderView(true);
   }
 });
 document.addEventListener('submit',async e=>{

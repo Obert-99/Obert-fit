@@ -150,6 +150,11 @@ const toSlug = s => String(s||'').trim().toLowerCase().replace(/ä/g,'ae').repla
 const emailFor = slug => `${slug}@${CONFIG.EMAIL_DOMAIN}`;
 const passFor = slug => `obert-${slug}-fit`;               // Startpasswort (bis die Person ihre PIN festlegt)
 const pinPass = (slug,pin) => `obert-${slug}-pin-${pin}`;   // echtes Passwort nach dem Festlegen der PIN
+function checkPop(gold){
+  const d=document.createElement('div');d.className='pop'+(gold?' gold':'');
+  d.innerHTML='<svg viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="24"/><path d="M15 27l8 8 15-17"/></svg>';
+  document.body.appendChild(d);setTimeout(()=>d.remove(),1500);
+}
 function toast(m,bad){const t=$('#toast');t.textContent=m;t.className='show'+(bad?' bad':'');clearTimeout(toast.t);toast.t=setTimeout(()=>t.className='',3200);}
 function destroyCharts(){
   Object.values(state.charts).forEach(c=>{try{c.destroy()}catch(e){}});state.charts={};
@@ -182,7 +187,7 @@ function observeReveals(root){
   els.forEach(e=>state.io.observe(e));
 }
 function countUp(el){
-  const to=Number(el.dataset.count); if(!to||reduced()) return;
+  const to=Number(el.dataset.count); if(!to) return;   // Zählen läuft auch bei „Bewegung reduzieren“ (iPhone): kein Bewegungsreiz, nur Zahlen
   const dec=Number(el.dataset.dec||0),grp=el.dataset.grp==='1';
   const fmt=v=>v.toLocaleString('de-DE',{minimumFractionDigits:dec,maximumFractionDigits:dec,useGrouping:grp});
   const t0=performance.now(),dur=1400;
@@ -241,7 +246,7 @@ function restRender(){
   const run=rest.left>0;
   const fmt=s=>Math.floor(s/60)+':'+pad2(s%60);
   el.innerHTML=(rest.open&&!run?`<div class="rt-menu">${[60,90,120].map(s=>`<button class="choice" data-act="rest-start" data-s="${s}">${s} s</button>`).join('')}</div>`:'')
-    +`<button class="rt-pill ${run?'run':''}" data-act="rest-toggle" aria-label="Pausen-Timer">${ic('timer')}<span>${run?fmt(rest.left):'Pause'}</span></button>`;
+    +`<button class="rt-pill ${run?'run':''}${run&&rest.left<=3?' last':''}" style="--p:${run&&rest.total?Math.round(100*(rest.total-rest.left)/rest.total):0}" data-act="rest-toggle" aria-label="Pausen-Timer">${ic('timer')}<span>${run?fmt(rest.left):'Pause'}</span></button>`;
 }
 function restStart(s){
   clearInterval(rest.iv);rest.left=s;rest.total=s;rest.open=false;restRender();

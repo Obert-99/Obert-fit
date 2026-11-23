@@ -1,6 +1,6 @@
 /* Service Worker: Netzwerk zuerst (immer aktuelle Seite), Zwischenspeicher nur als Notnagel.
    Daten aus Supabase werden bewusst NICHT zwischengespeichert. */
-const CACHE = 'obert-v3';
+const CACHE = 'obert-v5';
 const SHELL = ['./', 'index.html', 'styles.css', 'config.js', 'core.js', 'views-client.js', 'views-trainer.js', 'bild-suche.js', 'manifest.webmanifest', 'icon-192.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL).catch(() => {}))); self.skipWaiting(); });
 self.addEventListener('activate', e => {
